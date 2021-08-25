@@ -1,18 +1,17 @@
-import { useRef, useState } from "react";
-import styled, { css, keyframes } from "styled-components";
-import "../oven.css";
-import Boller from "./Boller";
-import BolleIpsumGenerator from "./BolleIpsumGenerator";
+import { useRef, useState } from 'react';
+import styled, { css, keyframes } from 'styled-components';
+import Boller from './Boller';
+import { boller } from './../boller';
 
 function ControllerText() {
   return (
     <>
-      <StyledText transform="translate(272.61 320)">{"TITLER"}</StyledText>
-      <StyledText transform="translate(395.27 320)">{"LENKER"}</StyledText>
+      <StyledText transform="translate(272.61 320)">{'TITLER'}</StyledText>
+      <StyledText transform="translate(395.27 320)">{'LENKER'}</StyledText>
       <StyledText transform="translate(542.56 320)">
-        <tspan letterSpacing={0}>{"B"}</tspan>
+        <tspan letterSpacing={0}>{'B'}</tspan>
         <tspan x={9.16} y={0}>
-          {"AK!"}
+          {'AK!'}
         </tspan>
       </StyledText>
     </>
@@ -23,9 +22,9 @@ function TitleController(props) {
   return (
     <StyledController
       id="controller_titles"
-      titleActive={props.titleActive}
+      isTitleActive={props.isTitleActive}
       isTitleController
-      onClick={() => props.setTitleActive((prev) => !prev)}
+      onClick={() => props.setIsTitleActive((prev) => !prev)}
     >
       <path
         className="cls-18"
@@ -50,9 +49,9 @@ function LinkController(props) {
   return (
     <StyledController
       id="controller_links"
-      linksActive={props.linksActive}
+      isLinksActive={props.isLinksActive}
       isLinkController
-      onClick={() => props.setLinksActive((prev) => !prev)}
+      onClick={() => props.setIsLinksActive((prev) => !prev)}
     >
       <g id="controller-indicator">
         s
@@ -81,9 +80,7 @@ function OnButton(props) {
     <StyledOnButton
       id="on-button"
       onClick={() => {
-        props.isOvenOpen? props.setIsBaking(true) : props.setIsOvenOpen(true);
-        console.log("isOvenOpen: " + props.isOvenOpen);
-        console.log("isBaking: " + props.isBaking);
+        props.isOvenOpen ? props.setIsBaking(true) : props.setIsOvenOpen(true);
         props.bakeIpsum();
       }}
     >
@@ -175,12 +172,11 @@ function OvenBody(props) {
       <StyledInsideOven d="M311.68 516.6H1051v296H311.68z" />
       <StyledForeignObject x="312" y="516" width="100%" height="100%">
         <StyledTextarea
+          isBaking={props.isBaking}
           isOvenOpen={props.isOvenOpen}
           ref={props.generatedIpsumRef}
           readOnly
-        >
-          <BolleIpsumGenerator isOvenOpen={props.isOvenOpen}/>
-        </StyledTextarea>
+        ></StyledTextarea>
       </StyledForeignObject>
     </g>
   );
@@ -236,28 +232,50 @@ function OvenDoor(props) {
 }
 
 function Oven() {
-  const [linksActive, setLinksActive] = useState(false);
-  const [titleActive, setTitleActive] = useState(false);
+  const [isLinksActive, setIsLinksActive] = useState(false);
+  const [isTitleActive, setIsTitleActive] = useState(false);
   const [wiggle, setWiggle] = useState(false);
   const [isOvenOpen, setIsOvenOpen] = useState(false);
   const [isBaking, setIsBaking] = useState(false);
   const generatedIpsumRef = useRef(null);
 
   const copyIpsumToKeyboard = () => {
-    console.log(generatedIpsumRef.current)
+    console.log(generatedIpsumRef.current);
     const ipsum = generatedIpsumRef.current.innerHTML;
     navigator.clipboard.writeText(ipsum);
   };
 
+  function generateIpsum(paragraphs, wordsPerParagraph) {
+    let ipsum = '';
+    for (let parNum = 0; parNum < paragraphs; parNum++) {
+      let amountOfLinks = isLinksActive
+        ? Math.floor(wordsPerParagraph / 20)
+        : 0;
+      // Have 1 link if less than 20 words per paragraph
+      amountOfLinks = amountOfLinks && isLinksActive ? amountOfLinks : 1;
+      ipsum += isTitleActive ? '<h1>Bolle-tittel</h1>' : '';
+      ipsum += '<p>';
+      for (let wordNum = 0; wordNum < wordsPerParagraph; wordNum++) {
+        ipsum += !wordNum
+          ? boller[wordNum].slice(0, 1).toUpperCase() +
+            boller[wordNum].slice(1, boller[wordNum].length) +
+            ' '
+          : boller[wordNum] + ' ';
+        // Sprinkle links
+        ipsum +=
+          isLinksActive && amountOfLinks > 0 && !(wordNum % 20)
+            ? '<a href="http://bolleipsum.no/">Bolle ipsum!</a> '
+            : '';
+        amountOfLinks -= isLinksActive ? 1 : 0;
+      }
+      ipsum += '</p>';
+    }
+    return ipsum;
+  }
+
   function bakeIpsum() {
-    console.log(
-      "link: " +
-        linksActive +
-        " title: " +
-        titleActive +
-        " oven open: " +
-        isOvenOpen
-    );
+    // <BolleIpsumGenerator isLinksActive={props.isLinksActive} isTitleActive={props.isTitleActive} isOvenOpen={props.isOvenOpen}/>
+    generatedIpsumRef.current.innerHTML = generateIpsum(2, 17);
   }
 
   return (
@@ -321,13 +339,18 @@ function Oven() {
           </clipPath>
           <style>
             {
-              ".cls-1{fill:#b52828}.cls-4{fill:#c27338}.cls-8{fill:#adadad}.cls-10{fill:#333}.cls-12{fill:#dcda68}.cls-13{fill:#191919}.cls-14{fill:gray}.cls-15,.cls-16{fill:#717272}.cls-18,.cls-20{fill:#fff}.cls-19{fill:#ccc}.cls-20{opacity:.16}.cls-23{fill:none;stroke:#931f1f;stroke-miterlimit:10;stroke-width:6px}.cls-24{fill:#5d3815}"
+              '.cls-1{fill:#b52828}.cls-4{fill:#c27338}.cls-8{fill:#adadad}.cls-10{fill:#333}.cls-12{fill:#dcda68}.cls-13{fill:#191919}.cls-14{fill:gray}.cls-15,.cls-16{fill:#717272}.cls-18,.cls-20{fill:#fff}.cls-19{fill:#ccc}.cls-20{opacity:.16}.cls-23{fill:none;stroke:#931f1f;stroke-miterlimit:10;stroke-width:6px}.cls-24{fill:#5d3815}'
             }
           </style>
         </defs>
-        <Boller/>
+        <Boller />
         <KitchenBackground />
-        <OvenBody isOvenOpen={isOvenOpen} generatedIpsumRef={generatedIpsumRef}/>
+        <OvenBody
+          isTitleActive={isTitleActive}
+          isBaking={isBaking}
+          isLinksActive={isLinksActive}
+          generatedIpsumRef={generatedIpsumRef}
+        />
         <ControllerText />
         <OnButton
           isBaking={isBaking}
@@ -337,12 +360,12 @@ function Oven() {
           bakeIpsum={bakeIpsum}
         />
         <TitleController
-          titleActive={titleActive}
-          setTitleActive={setTitleActive}
+          isTitleActive={isTitleActive}
+          setIsTitleActive={setIsTitleActive}
         />
         <LinkController
-          linksActive={linksActive}
-          setLinksActive={setLinksActive}
+          isLinksActive={isLinksActive}
+          setIsLinksActive={setIsLinksActive}
         />
         <OvenDoor
           isBaking={isBaking}
@@ -370,10 +393,10 @@ const StyledForeignObject = styled.foreignObject`
 `;
 
 const StyledTextarea = styled.div`
+  filter: ${(props) => (props.isBaking ? 'blur(20px)' : 'blur(0px)')};
   box-shadow: inset 0 0 10px 5px #00000042;
   border: none;
   color: white;
-  transition: opacity 0.3s;
   background-color: rgba(0, 0, 0, 0);
   padding: 15px;
   outline: none;
@@ -399,14 +422,14 @@ const StyledTextarea = styled.div`
   & a:hover:after {
     height: 30px;
     border-radius: 100%;
-    border: 3px solid #7c4d21;
+    border: 1px solid #7c4d21;
     left: -7px;
     right: 42px;
     bottom: -8px;
   }
   & a:after {
     transition: 0.3s;
-    content: "";
+    content: '';
     position: absolute;
     left: 0;
     right: 0;
@@ -420,7 +443,7 @@ const StyledTextarea = styled.div`
 
   & ::selection {
     color: #272727;
-    background: #2883DD;
+    background: #2883dd;
   }
   ::-webkit-scrollbar {
     width: 20px;
@@ -438,7 +461,8 @@ const StyledTextarea = styled.div`
 
 const StyledGlass = styled.path`
   transition: 0.5s ease;
-  fill: ${props => !props.isBaking || !props.isOvenOpen ? "#191919" : "url(#glass-gradient)"};
+  fill: ${(props) =>
+    !props.isBaking || !props.isOvenOpen ? '#191919' : 'url(#glass-gradient)'};
 `;
 
 const OpenCloseInsideDoorAnimation = keyframes`
@@ -446,23 +470,21 @@ const OpenCloseInsideDoorAnimation = keyframes`
   20% {transform: translateY(100px);}
   80% {transform: translateY(100px);}
   100% {transform: translateY(0px);}
-`
+`;
 
-const OpenCloseInsideDoorAnimationHelper  = css`
+const OpenCloseInsideDoorAnimationHelper = css`
   animation: ${OpenCloseInsideDoorAnimation} 1.2s ease-in-out;
 `;
 
 const StyledInsideDoor = styled.path`
   transition: 0.3s;
-  ${props => props.isBaking && OpenCloseInsideDoorAnimationHelper};
-  transform: ${props => props.isOvenOpen? "translateY(0px)" : "translateY(100px)"};
+  ${(props) => props.isBaking && OpenCloseInsideDoorAnimationHelper};
+  transform: ${(props) =>
+    props.isOvenOpen ? 'translateY(0px)' : 'translateY(100px)'};
 `;
 
 const OpenCloseAnimation = keyframes`
   0% {
-    ${StyledGlass}{
-
-    }
     transform: rotateX(-80deg);
     filter: brightness(70%);
   }
@@ -480,17 +502,17 @@ const OpenCloseAnimation = keyframes`
   }
 `;
 
-const OpenCloseAnimationHelper  = css`
+const OpenCloseAnimationHelper = css`
   animation: ${OpenCloseAnimation} 1.2s ease-in-out;
 `;
 
 const StyledOvenDoor = styled.g`
-  ${props => props.isBaking && OpenCloseAnimationHelper};
+  ${(props) => props.isBaking && OpenCloseAnimationHelper};
   transition: 0.3s;
   transform: ${(props) =>
-    !props.isOvenOpen ? "rotateX(0deg)" : "rotateX(-80deg)"};
+    !props.isOvenOpen ? 'rotateX(0deg)' : 'rotateX(-80deg)'};
   filter: ${(props) =>
-    !props.isOvenOpen ? "brightness(100%)" : "brightness(70%)"};
+    !props.isOvenOpen ? 'brightness(100%)' : 'brightness(70%)'};
   transform-box: fill-box;
   transform-origin: bottom center;
 `;
@@ -501,7 +523,8 @@ const StyledInsideOven = styled.path`
 
 const StyledShine = styled.path`
   transition: 0.3s;
-  fill-opacity: ${(props) => (props.isOvenOpen || !props.isBaking) ? "0.2" : "1"};
+  fill-opacity: ${(props) =>
+    props.isOvenOpen || !props.isBaking ? '0.2' : '1'};
 `;
 
 const StyledControllerDial = styled.path`
@@ -525,14 +548,11 @@ const StyledOnButton = styled.g`
 
 const StyledController = styled.g`
   cursor: pointer;
-  &:hover ${StyledControllerDial} {
-    transform: scale(1.1);
-  }
   transform: ${(props) =>
-    (props.titleActive && props.isTitleController) ||
-    (props.linksActive && props.isLinkController)
-      ? "rotate(-90deg)"
-      : "rotate(0deg)"};
+    (props.isTitleActive && props.isTitleController) ||
+    (props.isLinksActive && props.isLinkController)
+      ? 'rotate(-90deg)'
+      : 'rotate(0deg)'};
   transform-box: fill-box;
   transform-origin: center center;
   transition: 0.5s ease-in-out;
@@ -589,18 +609,8 @@ const WiggleAnimationHelper = css`
   animation: ${WiggleAnimation} 1s ease-out;
 `;
 
-const CopyActionHelper = css`
-  & ${StyledTextarea}{
-    & h1{
-      background-color: red;
-      filter: blur(30px);
-    }
-  }
-`;
-
 const StyledGlove = styled.g`
-  ${props => props.wiggle && WiggleAnimationHelper};
-  ${props => props.wiggle && CopyActionHelper};
+  ${(props) => props.wiggle && WiggleAnimationHelper};
   cursor: pointer;
   transition: 0.3s;
   &:hover {
@@ -613,8 +623,8 @@ const StyledGlove = styled.g`
 
 const OvenWrapper = styled.div`
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
