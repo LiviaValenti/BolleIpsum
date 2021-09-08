@@ -561,7 +561,7 @@ const StyledController = styled.g`
 const StyledText = styled.text`
   fill: white;
   font-size: 21px;
-  font-family: Bebas-Regular, Bebas;
+  font-family: 'Bebas Neue', cursive;
 `;
 
 const Header = styled.div`
